@@ -26,10 +26,11 @@ app.set('trust proxy', 1);
 // HTTP security headers
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
-// CORS — dynamic origin matcher supporting localhost, Cloudflare tunnels, and configured CLIENT_URL
+// CORS — dynamic origin matcher supporting localhost, Vercel frontend, Cloudflare tunnels, and configured CLIENT_URL
 const allowedOrigins = [
   env.CLIENT_URL,
   process.env.CLIENT_URL,
+  'https://next-gen-cma-frontend.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173'
@@ -40,20 +41,22 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like server-to-server, mobile apps, Postman)
       if (!origin) return callback(null, true);
-      // Allow configured client URL, localhost, or any Cloudflare tunnel domain
+      // Allow configured client URL, Vercel frontend, localhost, or any Cloudflare tunnel domain
       if (
         allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com') ||
         origin.endsWith('.trycloudflare.com') ||
         origin.includes('localhost') ||
         origin.includes('127.0.0.1')
       ) {
         return callback(null, true);
       }
-      return callback(null, true); // Fallback: allow dynamically for dev tunnels
+      return callback(null, true); // Fallback: allow dynamically for dev/deployment tunnels
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Refresh-Token'],
   })
 );
 

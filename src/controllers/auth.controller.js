@@ -11,11 +11,11 @@ import { env } from '../config/env.js';
 
 // Helper to set refresh token cookie
 const setRefreshTokenCookie = (req, res, token) => {
-  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || env.NODE_ENV === 'production';
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || env.NODE_ENV === 'production' || !!req.get('origin')?.startsWith('https');
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: isHttps,
-    sameSite: isHttps ? 'none' : 'lax', // 'none' required for cross-site Cloudflare tunnels over HTTPS
+    sameSite: isHttps ? 'none' : 'lax', // 'none' required for cross-site Render <-> Vercel deployments over HTTPS
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   });
 };
@@ -33,6 +33,7 @@ export const registerUser = async (req, res, next) => {
     return ApiResponse.created('User registered successfully', {
       user: result.user,
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     }).send(res);
   } catch (error) {
     next(error);
@@ -53,6 +54,7 @@ export const loginUser = async (req, res, next) => {
     return ApiResponse.ok('Logged in successfully', {
       user: result.user,
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     }).send(res);
   } catch (error) {
     next(error);
@@ -123,12 +125,12 @@ export const updateUserProfile = async (req, res, next) => {
  */
 export const logoutUser = async (req, res, next) => {
   try {
-    const token = req.cookies.refreshToken;
+    const token = req.cookies?.refreshToken || req.body?.refreshToken || req.headers['x-refresh-token'];
     if (token) {
       await authService.logout(token);
     }
 
-    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || env.NODE_ENV === 'production';
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || env.NODE_ENV === 'production' || !!req.get('origin')?.startsWith('https');
 
     // Clear refresh token cookie
     res.clearCookie('refreshToken', {
@@ -144,12 +146,16 @@ export const logoutUser = async (req, res, next) => {
 };
 
 /**
- * Issue new access token using refresh token stored in cookie
+ * Issue new access token using refresh token stored in cookie or request body
  */
 export const refreshAccessToken = async (req, res, next) => {
   try {
-    const token = req.cookies.refreshToken;
+    const token = req.cookies?.refreshToken || req.body?.refreshToken || req.headers['x-refresh-token'];
     const result = await authService.refresh(token);
+
+    if (result?.refreshToken) {
+      setRefreshTokenCookie(req, res, result.refreshToken);
+    }
 
     return ApiResponse.ok('Access token refreshed successfully', result).send(res);
   } catch (error) {

@@ -24,7 +24,7 @@ export const login = async (req, res, next) => {
       ipAddress: req.ip || req.headers['x-forwarded-for'],
     });
 
-    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production' || !!req.get('origin')?.startsWith('https');
 
     // Set refresh token in HTTP-only secure cookie
     res.cookie('nextgen_refresh_token', refreshToken, {
@@ -37,6 +37,7 @@ export const login = async (req, res, next) => {
     return ApiResponse.ok('Admin authenticated successfully', {
       user,
       accessToken,
+      refreshToken,
     }).send(res);
   } catch (error) {
     next(error);
