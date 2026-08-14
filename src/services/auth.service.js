@@ -78,12 +78,14 @@ export const register = async (userData) => {
 };
 
 export const login = async (identifier, password) => {
+  const cleanIdentifier = (identifier || '').trim();
+
   // Find user by either email or phone
   const user = await prisma.user.findFirst({
     where: {
       OR: [
-        { email: identifier.toLowerCase() },
-        { phone: identifier },
+        { email: cleanIdentifier.toLowerCase() },
+        { phone: cleanIdentifier },
       ],
     },
   });
