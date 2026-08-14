@@ -24,8 +24,7 @@ export const registerValidator = [
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .withMessage('Please provide a valid email address'),
 
   body('phone')
     .trim()
@@ -80,8 +79,7 @@ export const forgotPasswordValidator = [
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .withMessage('Please provide a valid email address'),
 ];
 
 /**
@@ -94,8 +92,7 @@ export const resetPasswordValidator = [
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .withMessage('Please provide a valid email address'),
 
   body('otp')
     .trim()
